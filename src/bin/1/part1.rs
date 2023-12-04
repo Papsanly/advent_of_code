@@ -1,6 +1,6 @@
 use crate::INPUT;
 
-pub fn part_1() -> Option<u32> {
+pub fn part1() -> Option<u32> {
     INPUT
         .lines()
         .map(|line| {
@@ -10,6 +10,4 @@ pub fn part_1() -> Option<u32> {
             Some(10 * first_digit + second_digit)
         })
         .sum::<Option<u32>>()
-    // .collect::<Option<Vec<u32>>>()
 }
-

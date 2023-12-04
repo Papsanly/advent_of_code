@@ -41,7 +41,7 @@ fn parse(line: &str, r: bool) -> Option<u32> {
     digit_literal.or_else(|| line[digit_pos..digit_pos + 1].parse::<u32>().ok())
 }
 
-pub fn part_2() -> Option<u32> {
+pub fn part2() -> Option<u32> {
     INPUT
         .lines()
         .map(|line| {
