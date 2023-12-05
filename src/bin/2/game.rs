@@ -2,15 +2,15 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Game {
-    id: usize,
-    sets: Vec<Set>,
+    pub id: usize,
+    pub sets: Vec<Set>,
 }
 
 #[derive(Debug)]
 pub struct Set {
-    red: Option<usize>,
-    green: Option<usize>,
-    blue: Option<usize>,
+    pub red: Option<usize>,
+    pub green: Option<usize>,
+    pub blue: Option<usize>,
 }
 
 impl FromStr for Game {
