@@ -71,7 +71,22 @@ impl Index<SchematicIndex> for Schematic {
 
 struct PartNumber {
     value: usize,
-    span: Range<usize>,
+    span: usize,
+    index: SchematicIndex,
+}
+
+impl PartNumber {
+    fn new(schematic: &Schematic, start: usize, end: usize) -> Option<Self> {
+        Some(Self {
+            value: schematic.chars[start..end]
+                .iter()
+                .collect::<String>()
+                .parse()
+                .ok()?,
+            span: end - start,
+            index: (start % (schematic.width + 1), start / (schematic.width + 1)),
+        })
+    }
 }
 
 struct PartNumberIterator<'a> {
@@ -104,16 +119,7 @@ impl<'a> Iterator for PartNumberIterator<'a> {
 
         self.pos = end;
 
-        let value = self.schematic.chars[start..end]
-            .iter()
-            .collect::<String>()
-            .parse()
-            .ok()?;
-
-        Some(PartNumber {
-            value,
-            span: start..end,
-        })
+        PartNumber::new(self.schematic, start, end)
     }
 }
 
@@ -132,7 +138,6 @@ pub fn part1() -> Option<usize> {
     }
 
     dbg!(&values);
-    dbg!(schematic[(schematic.width, schematic.height)]);
 
     Some(values.into_iter().sum())
 }
@@ -179,22 +184,29 @@ mod tests {
     fn part_number_iterator() {
         let schematic = Schematic::new(
             "
-.........232.633.......................803....
-.............*........361...............-.....
-..........539.................973.221...340...
-...329..........*..............#.....256.#....
-......................*313............*.......
-...766.......*......72.......-...........+.249
-6..-..@.......181........4..865.........968..6
+...329...*.....#.....256.#....
+.&....*313............*.......
+...766....*......72...-..+.249
+6..-..@....181..4..865..968..6
 ",
         );
         assert_eq!(
             PartNumberIterator::new(&schematic)
-                .map(|pn| pn.value)
+                .map(|pn| (pn.value, pn.index, pn.span))
                 .collect::<Vec<_>>(),
             vec![
-                232, 633, 803, 361, 539, 973, 221, 340, 329, 256, 313, 766, 72, 249, 6, 181, 4,
-                865, 968, 6
+                (329, (3, 0), 3),
+                (256, (21, 0), 3),
+                (313, (7, 1), 3),
+                (766, (3, 2), 3),
+                (72, (17, 2), 2),
+                (249, (27, 2), 3),
+                (6, (0, 3), 1),
+                (181, (11, 3), 3),
+                (4, (16, 3), 1),
+                (865, (19, 3), 3),
+                (968, (24, 3), 3),
+                (6, (29, 3), 1)
             ]
         )
     }
