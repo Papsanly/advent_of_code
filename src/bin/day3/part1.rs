@@ -22,8 +22,8 @@ struct Schematic {
 
 impl Schematic {
     fn new(s: &str) -> Self {
-        let chars: Vec<char> = s.chars().collect();
-        let width = s.find('\n').map_or(s.len(), |w| w + 1);
+        let chars: Vec<char> = s.trim().chars().collect();
+        let width = s.trim().find('\n').unwrap_or(s.len());
         let height = chars.len() / width;
         Self {
             chars,
@@ -65,7 +65,7 @@ impl Schematic {
 impl Index<SchematicIndex> for Schematic {
     type Output = char;
     fn index(&self, index: SchematicIndex) -> &Self::Output {
-        &self.chars[index.1 * self.width + index.0]
+        &self.chars[index.1 * (self.width + 1) + index.0]
     }
 }
 
@@ -100,8 +100,7 @@ impl<'a> Iterator for PartNumberIterator<'a> {
         let end = self.schematic.chars[start..]
             .iter()
             .position(|c| !c.is_ascii_digit())
-            .unwrap_or(self.pos)
-            + start;
+            .map_or(self.schematic.chars.len(), |end| end + start);
 
         self.pos = end;
 
@@ -185,8 +184,8 @@ mod tests {
 ..........539.................973.221...340...
 ...329..........*..............#.....256.#....
 ......................*313............*.......
-...766.......*.....472.......-...........+.249
-670-..@.......181......814..865.........968...
+...766.......*......72.......-...........+.249
+6..-..@.......181........4..865.........968..6
 ",
         );
         assert_eq!(
@@ -194,9 +193,39 @@ mod tests {
                 .map(|pn| pn.value)
                 .collect::<Vec<_>>(),
             vec![
-                232, 633, 803, 361, 539, 973, 221, 340, 329, 256, 313, 766, 472, 249, 670, 181,
-                814, 865, 968
+                232, 633, 803, 361, 539, 973, 221, 340, 329, 256, 313, 766, 72, 249, 6, 181, 4,
+                865, 968, 6
             ]
+        )
+    }
+
+    #[test]
+    fn part_1() {
+        let schematic = Schematic::new(
+            "
+.........232.633.......................803....
+.............*........361...............-.....
+..........539..............2..973.221...340...
+...329..........*..............#.....256.#....
+......................*313............*.......
+...766.......*......72...*...-...........+.249
+6*.-..@.......181........4..865.........968..6
+",
+        );
+        let mut values: Vec<usize> = Vec::new();
+        for num in PartNumberIterator::new(&schematic) {
+            // if num
+            //     .get_adjacent()
+            //     .iter()
+            //     .any(|&c| !c.is_ascii_digit() && c != '.')
+            // {
+            values.push(num.value);
+            // }
+        }
+
+        assert_eq!(
+            values,
+            vec![633, 803, 539, 973, 340, 256, 313, 766, 72, 6, 181, 4, 865, 968]
         )
     }
 }
