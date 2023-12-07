@@ -1,8 +1,9 @@
 use crate::INPUT;
-use std::ops::{Index, Range};
+use std::ops::Index;
 
 type SchematicIndex = (usize, usize);
 
+#[derive(Debug, Clone, Copy)]
 enum Direction {
     Up,
     Down,
@@ -40,7 +41,7 @@ impl Schematic {
             y = y.checked_sub(1)?;
         } else if let Down | DownLeft | DownRight = direction {
             y += 1;
-            if y > self.height {
+            if y >= self.height {
                 return None;
             }
         }
@@ -49,7 +50,7 @@ impl Schematic {
             x = x.checked_sub(1)?;
         } else if let Right | UpRight | DownRight = direction {
             x += 1;
-            if x > self.width {
+            if x >= self.width {
                 return None;
             }
         }
@@ -58,7 +59,31 @@ impl Schematic {
     }
 
     fn get_adjacent(&self, pn: &PartNumber) -> Vec<char> {
-        todo!()
+        let mut res = Vec::new();
+
+        for offset in 0..pn.span {
+            let offset_idx = (pn.index.0 + offset, pn.index.1);
+            for direction in [Direction::Up, Direction::Down] {
+                if let Some(i) = self.move_idx(offset_idx, direction) {
+                    res.push(self[i])
+                }
+            }
+        }
+
+        for direction in [Direction::UpLeft, Direction::Left, Direction::DownLeft] {
+            if let Some(i) = self.move_idx(pn.index, direction) {
+                res.push(self[i])
+            }
+        }
+
+        let offset_idx = (pn.index.0 + pn.span - 1, pn.index.1);
+        for direction in [Direction::UpRight, Direction::Right, Direction::DownRight] {
+            if let Some(i) = self.move_idx(offset_idx, direction) {
+                res.push(self[i])
+            }
+        }
+
+        res
     }
 }
 
@@ -126,16 +151,15 @@ impl<'a> Iterator for PartNumberIterator<'a> {
 pub fn part1() -> Option<usize> {
     let schematic = Schematic::new(INPUT);
 
-    let mut values: Vec<usize> = Vec::new();
-    for num in PartNumberIterator::new(&schematic) {
-        if schematic
-            .get_adjacent(&num)
-            .iter()
-            .any(|&c| !c.is_ascii_digit() && c != '.')
-        {
-            values.push(num.value);
-        }
-    }
+    let values: Vec<usize> = PartNumberIterator::new(&schematic)
+        .filter(|pn| {
+            schematic
+                .get_adjacent(pn)
+                .iter()
+                .any(|&c| !c.is_ascii_digit() && c != '.')
+        })
+        .map(|pn| pn.value)
+        .collect();
 
     dbg!(&values);
 
@@ -161,22 +185,29 @@ mod tests {
 
         for direction in [Down, Right, DownRight, DownLeft, UpRight] {
             assert_eq!(
-                schematic.move_idx((schematic.width, schematic.height), direction),
+                schematic.move_idx((schematic.width - 1, schematic.height - 1), direction),
+                None
+            );
+        }
+
+        for direction in [Down, DownRight, DownLeft] {
+            assert_eq!(
+                schematic.move_idx((1, schematic.height - 1), direction),
                 None
             );
         }
 
         assert_eq!(
-            schematic.move_idx((schematic.width, schematic.height), Up),
-            Some((schematic.width, schematic.height - 1))
+            schematic.move_idx((schematic.width - 1, schematic.height - 1), Up),
+            Some((schematic.width - 1, schematic.height - 2))
         );
         assert_eq!(
-            schematic.move_idx((schematic.width, schematic.height), Left),
-            Some((schematic.width - 1, schematic.height))
+            schematic.move_idx((schematic.width - 1, schematic.height - 1), Left),
+            Some((schematic.width - 2, schematic.height - 1))
         );
         assert_eq!(
-            schematic.move_idx((schematic.width, schematic.height), UpLeft),
-            Some((schematic.width - 1, schematic.height - 1))
+            schematic.move_idx((schematic.width - 1, schematic.height - 1), UpLeft),
+            Some((schematic.width - 2, schematic.height - 2))
         );
     }
 
