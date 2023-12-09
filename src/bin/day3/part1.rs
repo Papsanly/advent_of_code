@@ -1,18 +1,30 @@
 use crate::INPUT;
 use std::ops::Index;
 
-type SchematicIndex = (usize, usize);
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+struct SchematicIndex {
+    x: usize,
+    y: usize,
+}
 
-#[derive(Debug, Clone, Copy)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-    UpLeft,
-    UpRight,
-    DownRight,
-    DownLeft,
+impl From<(usize, usize)> for SchematicIndex {
+    fn from(value: (usize, usize)) -> Self {
+        Self {
+            x: value.0,
+            y: value.1,
+        }
+    }
+}
+
+macro_rules! add_idx {
+    ($schematic:expr, $first_idx:expr, $($idx:expr),*) => {'add: {
+        let mut res = $first_idx;
+        $(res = match $schematic.add_idx(res, $idx) {
+            Some(res) => res,
+            None => break 'add None
+        };)*
+        Some(res)
+    }};
 }
 
 struct Schematic {
@@ -33,52 +45,47 @@ impl Schematic {
         }
     }
 
-    fn move_idx(&self, index: SchematicIndex, direction: Direction) -> Option<SchematicIndex> {
-        use Direction::*;
-        let (mut x, mut y) = index;
+    fn add_idx<T>(&self, first: SchematicIndex, second: (T, T)) -> Option<SchematicIndex>
+    where
+        T: TryInto<isize>,
+    {
+        let x = first.x as isize + second.0.try_into().ok()?;
+        let y = first.y as isize + second.1.try_into().ok()?;
 
-        if let Up | UpLeft | UpRight = direction {
-            y = y.checked_sub(1)?;
-        } else if let Down | DownLeft | DownRight = direction {
-            y += 1;
-            if y >= self.height {
-                return None;
-            }
+        if x >= self.width as isize {
+            return None;
+        }
+        if y >= self.height as isize {
+            return None;
         }
 
-        if let Left | UpLeft | DownLeft = direction {
-            x = x.checked_sub(1)?;
-        } else if let Right | UpRight | DownRight = direction {
-            x += 1;
-            if x >= self.width {
-                return None;
-            }
+        if x < 0 || y < 0 {
+            None
+        } else {
+            Some((x as usize, y as usize).into())
         }
-
-        Some((x, y))
     }
 
     fn get_adjacent(&self, pn: &PartNumber) -> Vec<char> {
         let mut res = Vec::new();
 
         for offset in 0..pn.span {
-            let offset_idx = (pn.index.0 + offset, pn.index.1);
-            for direction in [Direction::Up, Direction::Down] {
-                if let Some(i) = self.move_idx(offset_idx, direction) {
+            for direction in [(0, 1), (0, -1)] {
+                if let Some(i) = add_idx!(self, pn.index, (offset, 0), direction) {
                     res.push(self[i])
                 }
             }
         }
 
-        for direction in [Direction::UpLeft, Direction::Left, Direction::DownLeft] {
-            if let Some(i) = self.move_idx(pn.index, direction) {
+        for direction in [(-1, -1), (-1, 0), (-1, 1)] {
+            if let Some(i) = add_idx!(self, pn.index, direction) {
                 res.push(self[i])
             }
         }
 
-        let offset_idx = (pn.index.0 + pn.span - 1, pn.index.1);
-        for direction in [Direction::UpRight, Direction::Right, Direction::DownRight] {
-            if let Some(i) = self.move_idx(offset_idx, direction) {
+        let offset_idx = add_idx!(self, pn.index, (pn.span - 1, 0)).unwrap();
+        for direction in [(1, -1), (1, 0), (1, 1)] {
+            if let Some(i) = add_idx!(self, offset_idx, direction) {
                 res.push(self[i])
             }
         }
@@ -90,7 +97,7 @@ impl Schematic {
 impl Index<SchematicIndex> for Schematic {
     type Output = char;
     fn index(&self, index: SchematicIndex) -> &Self::Output {
-        &self.chars[index.1 * (self.width + 1) + index.0]
+        &self.chars[index.y * (self.width + 1) + index.x]
     }
 }
 
@@ -109,7 +116,7 @@ impl PartNumber {
                 .parse()
                 .ok()?,
             span: end - start,
-            index: (start % (schematic.width + 1), start / (schematic.width + 1)),
+            index: (start % (schematic.width + 1), start / (schematic.width + 1)).into(),
         })
     }
 }
@@ -171,44 +178,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn move_indices() {
-        use Direction::*;
-
+    fn add_idx() {
         let schematic = Schematic::new(INPUT);
-        for direction in [Up, Left, UpLeft, DownLeft, UpRight] {
-            assert_eq!(schematic.move_idx((0, 0), direction), None);
-        }
-
-        assert_eq!(schematic.move_idx((0, 0), Right), Some((1, 0)));
-        assert_eq!(schematic.move_idx((0, 0), Down), Some((0, 1)));
-        assert_eq!(schematic.move_idx((0, 0), DownRight), Some((1, 1)));
-
-        for direction in [Down, Right, DownRight, DownLeft, UpRight] {
-            assert_eq!(
-                schematic.move_idx((schematic.width - 1, schematic.height - 1), direction),
-                None
-            );
-        }
-
-        for direction in [Down, DownRight, DownLeft] {
-            assert_eq!(
-                schematic.move_idx((1, schematic.height - 1), direction),
-                None
-            );
-        }
-
         assert_eq!(
-            schematic.move_idx((schematic.width - 1, schematic.height - 1), Up),
-            Some((schematic.width - 1, schematic.height - 2))
+            schematic.add_idx((schematic.width - 1, schematic.height - 1).into(), (1, 0)),
+            None
+        );
+        assert_eq!(schematic.add_idx((0, 0).into(), (0, -1)), None);
+        assert_eq!(
+            schematic.add_idx((4, 5).into(), (4, -5)),
+            Some((8, 0).into())
         );
         assert_eq!(
-            schematic.move_idx((schematic.width - 1, schematic.height - 1), Left),
-            Some((schematic.width - 2, schematic.height - 1))
-        );
-        assert_eq!(
-            schematic.move_idx((schematic.width - 1, schematic.height - 1), UpLeft),
-            Some((schematic.width - 2, schematic.height - 2))
-        );
+            add_idx!(schematic, (3, 5).into(), (-1, 2), (3, 4), (-2, -2)),
+            Some((3, 9).into())
+        )
     }
 
     #[test]
@@ -226,18 +210,18 @@ mod tests {
                 .map(|pn| (pn.value, pn.index, pn.span))
                 .collect::<Vec<_>>(),
             vec![
-                (329, (3, 0), 3),
-                (256, (21, 0), 3),
-                (313, (7, 1), 3),
-                (766, (3, 2), 3),
-                (72, (17, 2), 2),
-                (249, (27, 2), 3),
-                (6, (0, 3), 1),
-                (181, (11, 3), 3),
-                (4, (16, 3), 1),
-                (865, (19, 3), 3),
-                (968, (24, 3), 3),
-                (6, (29, 3), 1)
+                (329, (3, 0).into(), 3),
+                (256, (21, 0).into(), 3),
+                (313, (7, 1).into(), 3),
+                (766, (3, 2).into(), 3),
+                (72, (17, 2).into(), 2),
+                (249, (27, 2).into(), 3),
+                (6, (0, 3).into(), 1),
+                (181, (11, 3).into(), 3),
+                (4, (16, 3).into(), 1),
+                (865, (19, 3).into(), 3),
+                (968, (24, 3).into(), 3),
+                (6, (29, 3).into(), 1)
             ]
         )
     }
