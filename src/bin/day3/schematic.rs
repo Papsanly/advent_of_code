@@ -1,3 +1,4 @@
+use crate::gear::Gear;
 use crate::part_number::PartNumber;
 use std::ops::Index;
 
@@ -17,6 +18,12 @@ macro_rules! add_idx {
 pub struct SchematicIndex {
     pub x: usize,
     pub y: usize,
+}
+
+impl SchematicIndex {
+    pub fn new(schematic: &Schematic, index: usize) -> Self {
+        (index % (schematic.width + 1), index / (schematic.width + 1)).into()
+    }
 }
 
 impl From<(usize, usize)> for SchematicIndex {
@@ -67,6 +74,34 @@ impl Schematic {
         }
     }
 
+    pub fn get_top_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
+        [(-1, -1), (0, -1), (1, -1)]
+            .into_iter()
+            .filter_map(|d| add_idx!(self, g.index, d))
+            .collect()
+    }
+
+    pub fn get_bottom_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
+        [(-1, 1), (0, 1), (1, 1)]
+            .into_iter()
+            .filter_map(|d| add_idx!(self, g.index, d))
+            .collect()
+    }
+
+    pub fn get_right_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
+        [(-1, 0)]
+            .into_iter()
+            .filter_map(|d| add_idx!(self, g.index, d))
+            .collect()
+    }
+
+    pub fn get_left_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
+        [(1, 0)]
+            .into_iter()
+            .filter_map(|d| add_idx!(self, g.index, d))
+            .collect()
+    }
+
     pub fn get_adjacent(&self, pn: &PartNumber) -> Vec<char> {
         let mut res = Vec::new();
 
@@ -95,9 +130,10 @@ impl Schematic {
     }
 }
 
-impl Index<SchematicIndex> for Schematic {
+impl<T: Into<SchematicIndex>> Index<T> for Schematic {
     type Output = char;
-    fn index(&self, index: SchematicIndex) -> &Self::Output {
+    fn index(&self, index: T) -> &Self::Output {
+        let index = index.into();
         &self.chars[index.y * (self.width + 1) + index.x]
     }
 }

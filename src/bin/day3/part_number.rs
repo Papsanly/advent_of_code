@@ -15,8 +15,12 @@ impl PartNumber {
                 .parse()
                 .ok()?,
             span: end - start,
-            index: (start % (schematic.width + 1), start / (schematic.width + 1)).into(),
+            index: SchematicIndex::new(schematic, start),
         })
+    }
+
+    pub fn from_idx(schematic: &Schematic, index: SchematicIndex) -> Option<Self> {
+        todo!()
     }
 }
 

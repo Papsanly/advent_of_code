@@ -1,9 +1,8 @@
 use crate::part_number::PartNumberIterator;
 use crate::schematic::Schematic;
-use crate::INPUT;
 
-pub fn part1() -> Option<usize> {
-    let schematic = Schematic::new(INPUT);
+pub fn part1(input: &str) -> Option<usize> {
+    let schematic = Schematic::new(input);
 
     let values: Vec<usize> = PartNumberIterator::new(&schematic)
         .filter(|pn| {
@@ -14,8 +13,6 @@ pub fn part1() -> Option<usize> {
         })
         .map(|pn| pn.value)
         .collect();
-
-    dbg!(&values);
 
     Some(values.into_iter().sum())
 }
