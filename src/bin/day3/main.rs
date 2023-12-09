@@ -1,5 +1,7 @@
 mod part1;
 // mod part2;
+mod part_number;
+mod schematic;
 
 use part1::part1;
 // use part2::part2;
