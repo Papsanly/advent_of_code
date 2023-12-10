@@ -8,6 +8,15 @@ pub struct Card {
     pub nums: Vec<usize>,
 }
 
+impl Card {
+    pub fn get_winning_count(&self) -> usize {
+        self.nums
+            .iter()
+            .filter(|num| self.winning_nums.contains(num))
+            .count()
+    }
+}
+
 impl FromStr for Card {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {

@@ -8,13 +8,9 @@ pub fn part1(input: &str) -> Option<usize> {
         .collect::<Option<_>>()?;
 
     let points = cards.iter().map(|card| {
-        let my_winning_nums = card
-            .nums
-            .iter()
-            .filter(|num| card.winning_nums.contains(num))
-            .count();
-        if my_winning_nums != 0 {
-            2usize.pow(my_winning_nums as u32 - 1)
+        let winnings = card.get_winning_count();
+        if winnings != 0 {
+            2usize.pow(winnings as u32 - 1)
         } else {
             0
         }
