@@ -1,6 +1,6 @@
-use crate::schematic::{Schematic, SchematicIndex};
+use crate::schematic::{AdjacentIndices, Schematic, SchematicIndex};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct PartNumber {
     pub value: usize,
     pub span: usize,
@@ -38,6 +38,16 @@ impl PartNumber {
             .map_or(schematic.chars.len(), |end| end + index);
 
         PartNumber::new(schematic, start, end)
+    }
+}
+
+impl AdjacentIndices for PartNumber {
+    fn span(&self) -> usize {
+        self.span
+    }
+
+    fn index(&self) -> SchematicIndex {
+        self.index
     }
 }
 

@@ -1,7 +1,17 @@
-use crate::schematic::{Schematic, SchematicIndex};
+use crate::schematic::{AdjacentIndices, Schematic, SchematicIndex};
 
 pub struct Gear {
     pub index: SchematicIndex,
+}
+
+impl AdjacentIndices for Gear {
+    fn index(&self) -> SchematicIndex {
+        self.index
+    }
+
+    fn span(&self) -> usize {
+        1
+    }
 }
 
 impl Gear {

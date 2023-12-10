@@ -1,5 +1,3 @@
-use crate::gear::Gear;
-use crate::part_number::PartNumber;
 use std::ops::Index;
 
 #[macro_export]
@@ -14,7 +12,12 @@ macro_rules! add_idx {
     }};
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub trait AdjacentIndices {
+    fn span(&self) -> usize;
+    fn index(&self) -> SchematicIndex;
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
 pub struct SchematicIndex {
     pub x: usize,
     pub y: usize,
@@ -78,55 +81,27 @@ impl Schematic {
         }
     }
 
-    pub fn get_top_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
-        [(-1, -1), (0, -1), (1, -1)]
-            .into_iter()
-            .filter_map(|d| self.add_idx(g.index, d))
-            .collect()
-    }
-
-    pub fn get_bottom_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
-        [(-1, 1), (0, 1), (1, 1)]
-            .into_iter()
-            .filter_map(|d| self.add_idx(g.index, d))
-            .collect()
-    }
-
-    pub fn get_right_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
-        [(-1, 0)]
-            .into_iter()
-            .filter_map(|d| self.add_idx(g.index, d))
-            .collect()
-    }
-
-    pub fn get_left_adjacent(&self, g: &Gear) -> Vec<SchematicIndex> {
-        [(1, 0)]
-            .into_iter()
-            .filter_map(|d| self.add_idx(g.index, d))
-            .collect()
-    }
-
-    pub fn get_adjacent(&self, pn: &PartNumber) -> Vec<char> {
+    pub fn get_adjacent(&self, ai: &impl AdjacentIndices) -> Vec<SchematicIndex> {
         let mut res = Vec::new();
 
-        for offset in 0..pn.span {
+        for offset in 0..ai.span() {
             for direction in [(0, 1), (0, -1)] {
-                if let Some(i) = add_idx!(self, pn.index, (offset, 0), direction) {
-                    res.push(self[i])
+                if let Some(i) = add_idx!(self, ai.index(), (offset, 0), direction) {
+                    res.push(i)
                 }
             }
         }
 
         for direction in [(-1, -1), (-1, 0), (-1, 1)] {
-            if let Some(i) = add_idx!(self, pn.index, direction) {
-                res.push(self[i])
+            if let Some(i) = add_idx!(self, ai.index(), direction) {
+                res.push(i)
             }
         }
 
-        let offset_idx = add_idx!(self, pn.index, (pn.span - 1, 0)).unwrap();
+        let offset_idx = add_idx!(self, ai.index(), (ai.span() - 1, 0)).unwrap();
         for direction in [(1, -1), (1, 0), (1, 1)] {
             if let Some(i) = add_idx!(self, offset_idx, direction) {
-                res.push(self[i])
+                res.push(i)
             }
         }
 

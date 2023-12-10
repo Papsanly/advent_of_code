@@ -6,10 +6,10 @@ pub fn part1(input: &str) -> Option<usize> {
 
     let values: Vec<usize> = PartNumberIterator::new(&schematic)
         .filter(|pn| {
-            schematic
-                .get_adjacent(pn)
-                .iter()
-                .any(|&c| !c.is_ascii_digit() && c != '.')
+            schematic.get_adjacent(pn).iter().any(|&i| {
+                let c = schematic[i];
+                !c.is_ascii_digit() && c != '.'
+            })
         })
         .map(|pn| pn.value)
         .collect();
@@ -35,16 +35,16 @@ mod tests {
 6*.-..@.......181........4..865.........968..6
 ",
         );
-        let mut values: Vec<usize> = Vec::new();
-        for num in PartNumberIterator::new(&schematic) {
-            if schematic
-                .get_adjacent(&num)
-                .iter()
-                .any(|&c| !c.is_ascii_digit() && c != '.')
-            {
-                values.push(num.value);
-            }
-        }
+
+        let values: Vec<usize> = PartNumberIterator::new(&schematic)
+            .filter(|pn| {
+                schematic.get_adjacent(pn).iter().any(|&i| {
+                    let c = schematic[i];
+                    !c.is_ascii_digit() && c != '.'
+                })
+            })
+            .map(|pn| pn.value)
+            .collect();
 
         assert_eq!(
             values,
