@@ -10,6 +10,6 @@ use part2::part2;
 const INPUT: &str = include_str!("input.txt");
 
 fn main() {
-    println!("Part day1: {:?}", part1(INPUT));
-    println!("Part day2: {:?}", part2(INPUT));
+    println!("Part 1: {:?}", part1(INPUT));
+    println!("Part 2: {:?}", part2(INPUT));
 }

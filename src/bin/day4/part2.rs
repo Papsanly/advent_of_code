@@ -14,7 +14,6 @@ pub fn part2(input: &str) -> Option<usize> {
         for i in 0..winnings {
             card_counts[card.id + i] += card_counts[card.id - 1];
         }
-        println!("{:?}", card_counts);
     }
 
     Some(card_counts.iter().sum())
