@@ -1,11 +1,11 @@
-use crate::gear::GearIterator;
+use crate::gear::gear_iterator;
 use crate::part_number::PartNumber;
 use crate::schematic::Schematic;
 
 pub fn part2(input: &str) -> Option<usize> {
     let schematic = Schematic::new(input);
 
-    let values: Vec<Option<usize>> = GearIterator::new(&schematic)
+    let values: Vec<Option<usize>> = gear_iterator(&schematic)
         .filter_map(|g| {
             let adjacent_digits: Vec<usize> = [
                 schematic.get_top_adjacent(&g),
@@ -28,6 +28,8 @@ pub fn part2(input: &str) -> Option<usize> {
             })
             .collect();
 
+            dbg!(&adjacent_digits);
+
             if adjacent_digits.len() != 2 {
                 None
             } else {
@@ -44,7 +46,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn part1() {
+    fn part_2() {
         assert_eq!(
             part2(
                 "

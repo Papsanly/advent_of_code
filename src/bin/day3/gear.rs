@@ -5,35 +5,54 @@ pub struct Gear {
 }
 
 impl Gear {
-    pub fn new(schematic: &Schematic, index: SchematicIndex) -> Option<Self> {
-        let char = schematic[index];
+    pub fn new(schematic: &Schematic, index: usize) -> Option<Self> {
+        let char = schematic.chars[index];
         if char != '*' {
             None
         } else {
-            Some(Self { index })
+            Some(Self {
+                index: SchematicIndex::new(schematic, index),
+            })
         }
     }
 }
 
-pub struct GearIterator<'a> {
-    schematic: &'a Schematic,
-    pos: usize,
+pub fn gear_iterator(schematic: &Schematic) -> impl Iterator<Item = Gear> + '_ {
+    schematic.chars.iter().enumerate().filter_map(|(i, &c)| {
+        if c == '*' {
+            Gear::new(schematic, i)
+        } else {
+            None
+        }
+    })
 }
 
-impl<'a> GearIterator<'a> {
-    pub fn new(schematic: &'a Schematic) -> Self {
-        Self { schematic, pos: 0 }
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schematic::Schematic;
 
-impl<'a> Iterator for GearIterator<'a> {
-    type Item = Gear;
+    #[test]
+    fn part_number_from_idx() {
+        let schematic = Schematic::new(
+            "
+467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+.......755
+...$.*....
+.664.598.6",
+        );
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let pos = self.schematic.chars[self.pos..]
-            .iter()
-            .position(|&c| c == '*')?;
-        self.pos = pos;
-        Gear::new(self.schematic, SchematicIndex::new(self.schematic, pos))
+        assert_eq!(
+            gear_iterator(&schematic)
+                .map(|g| (g.index.x, g.index.y))
+                .collect::<Vec<_>>(),
+            vec![(3, 1), (3, 4), (5, 8)]
+        )
     }
 }

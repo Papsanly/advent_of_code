@@ -1,5 +1,6 @@
 use crate::schematic::{Schematic, SchematicIndex};
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct PartNumber {
     pub value: usize,
     pub span: usize,
@@ -20,7 +21,23 @@ impl PartNumber {
     }
 
     pub fn from_idx(schematic: &Schematic, index: SchematicIndex) -> Option<Self> {
-        todo!()
+        let index = index.to_pos(schematic);
+
+        if !schematic.chars.get(index)?.is_ascii_digit() {
+            return None;
+        }
+
+        let start = schematic.chars[..index]
+            .iter()
+            .rposition(|&c| !c.is_ascii_digit())
+            .map_or(0, |start| start + 1);
+
+        let end = schematic.chars[index..]
+            .iter()
+            .position(|&c| !c.is_ascii_digit())
+            .map_or(schematic.chars.len(), |end| end + index);
+
+        PartNumber::new(schematic, start, end)
     }
 }
 
@@ -60,7 +77,7 @@ impl<'a> Iterator for PartNumberIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::part_number::PartNumberIterator;
+    use crate::part_number::{PartNumber, PartNumberIterator};
     use crate::schematic::Schematic;
 
     #[test]
@@ -92,5 +109,62 @@ mod tests {
                 (6, (29, 3).into(), 1)
             ]
         )
+    }
+
+    #[test]
+    fn part_number_from_idx() {
+        let schematic = Schematic::new(
+            "
+467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+.......755
+...$.*....
+.664.598.6",
+        );
+
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (0, 0).into())
+                .unwrap()
+                .value,
+            467
+        );
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (1, 0).into())
+                .unwrap()
+                .value,
+            467
+        );
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (2, 0).into())
+                .unwrap()
+                .value,
+            467
+        );
+        assert_eq!(PartNumber::from_idx(&schematic, (3, 0).into()), None);
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (2, 6).into())
+                .unwrap()
+                .value,
+            592
+        );
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (8, 7).into())
+                .unwrap()
+                .value,
+            755
+        );
+        assert_eq!(
+            PartNumber::from_idx(&schematic, (9, 9).into())
+                .unwrap()
+                .value,
+            6
+        );
+        assert_eq!(PartNumber::from_idx(&schematic, (11, 11).into()), None);
+        assert_eq!(PartNumber::from_idx(&schematic, (4, 9).into()), None);
     }
 }
