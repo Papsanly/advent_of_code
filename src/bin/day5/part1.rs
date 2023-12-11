@@ -1,23 +1,22 @@
-use std::ops::Deref;
+use std::ops::{Deref, Range};
 use std::str::FromStr;
 
-struct Range {
-    destination_start: usize,
-    source_start: usize,
-    range_length: usize,
+struct MapRange {
+    destination_range: Range<usize>,
+    source_range: Range<usize>,
 }
 
-impl Range {
+impl MapRange {
     fn contains(&self, value: usize) -> bool {
-        value >= self.source_start && value <= self.source_start + self.range_length
+        self.source_range.contains(&value)
     }
 
     fn get(&self, value: usize) -> usize {
-        self.destination_start + value - self.source_start
+        self.destination_range.start + value - self.source_range.start
     }
 }
 
-impl FromStr for Range {
+impl FromStr for MapRange {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let [destination_start, source_start, range_length] = s
@@ -27,17 +26,16 @@ impl FromStr for Range {
             .try_into()
             .map_err(|_| ())?;
         Ok(Self {
-            destination_start,
-            source_start,
-            range_length,
+            destination_range: destination_start..destination_start + range_length,
+            source_range: source_start..source_start + range_length,
         })
     }
 }
 
-struct Map(Vec<Range>);
+struct Map(Vec<MapRange>);
 
 impl Deref for Map {
-    type Target = Vec<Range>;
+    type Target = Vec<MapRange>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
