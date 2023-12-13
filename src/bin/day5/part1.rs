@@ -1,24 +1,13 @@
-use crate::map::Map;
+use crate::parse;
 
 pub fn part1(input: &str) -> Option<usize> {
-    let seeds = input
-        .lines()
-        .next()?
-        .split_whitespace()
-        .skip(1)
-        .map(|seed| seed.parse().ok())
-        .collect::<Option<Vec<usize>>>()?;
+    let seeds = parse::seeds(input)?;
 
-    let maps = input
-        .split("\n\n")
-        .skip(1)
-        .map(|map| map.parse().ok())
-        .collect::<Option<Vec<Map>>>()?;
+    let maps = parse::maps(input)?;
 
-    let locations = seeds.into_iter().map(|seed| {
-        maps.iter()
-            .fold(seed, |acc, map| map.get(acc).unwrap_or(acc))
-    });
+    let locations = seeds
+        .into_iter()
+        .map(|seed| maps.iter().fold(seed, |acc, map| map.get(acc)));
 
     locations.min()
 }
