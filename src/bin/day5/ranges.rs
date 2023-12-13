@@ -43,7 +43,18 @@ impl Map {
         key
     }
 
-    pub fn get_range(&self, key_range: &Range) -> Vec<Range> {
-        todo!()
+    pub fn get_range(&self, key: &Range) -> Vec<Range> {
+        let mut res = Vec::new();
+
+        for (source, destination) in self.source.iter().zip(self.destination.iter()) {
+            let intersect_range = source.start.max(key.start)..source.end.min(key.end);
+            if !intersect_range.is_empty() {
+                let start = destination.start + intersect_range.start - source.start;
+                let end = destination.end + intersect_range.end - source.end;
+                res.push(start..end)
+            }
+        }
+
+        res
     }
 }
